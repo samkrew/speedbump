@@ -1,3 +1,8 @@
+# v0.3.2
+
+**IMPROVEMENTS:**
+- Use `redis.v5` package (@vially, #3).
+
 # v0.2.0
 
 **IMPROVEMENTS:**

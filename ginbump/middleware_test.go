@@ -3,9 +3,10 @@ package ginbump
 import (
 	"net/http"
 
-	"github.com/etcinit/speedbump"
+	"gopkg.in/redis.v3"
+
 	"github.com/gin-gonic/gin"
-	"gopkg.in/redis.v5"
+	"github.com/samkrew/speedbump"
 )
 
 // The following example shows how to set up a rate limitting middleware in Gin
