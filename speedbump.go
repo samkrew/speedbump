@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"gopkg.in/redis.v5"
+	"github.com/go-redis/redis"
 )
 
 // RateLimiter is a Redis-backed rate limiter.
@@ -47,7 +47,15 @@ func NewLimiter(client *redis.Client, hasher RateHasher, max int64) *RateLimiter
 // during the current period.
 func (r *RateLimiter) Has(id string) (bool, error) {
 	hash := r.hasher.Hash(id)
-	return r.redisClient.Exists(hash).Result()
+	res, err := r.redisClient.Exists(hash).Result()
+	if err != nil {
+		return false, err
+	}
+	if res == 0 {
+		return false, nil
+	}
+
+	return true, nil
 }
 
 // Attempted returns the number of attempted requests for an id in the current
@@ -117,14 +125,11 @@ func (r *RateLimiter) Attempt(id string) (bool, error) {
 	// See: http://redis.io/commands/INCR
 	// See: http://redis.io/commands/INCR#pattern-rate-limiter-1
 	err = r.redisClient.Watch(func(rx *redis.Tx) error {
-		_, err := rx.Pipelined(func(pipe *redis.Pipeline) error {
+		_, err := rx.Pipelined(func(pipe redis.Pipeliner) error {
 			if err := pipe.Incr(hash).Err(); err != nil {
 				return err
 			}
-			if err := pipe.Expire(hash, r.hasher.Duration()).Err(); err != nil {
-				return err
-			}
-			return nil
+			return pipe.Expire(hash, r.hasher.Duration()).Err()
 		})
 		return err
 	})
